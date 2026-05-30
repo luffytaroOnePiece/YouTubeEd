@@ -15,19 +15,25 @@ const getFolderNames = (videoId) => {
   return Array.from(new Set(folders));
 };
 
+const BASE_URL = 'https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT';
+
 export default function EduNotesPanel({ video }) {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState([]);
-  const [imageUrl, setImageUrl] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);       // mindmap.png
+  const [overviewUrl, setOverviewUrl] = useState(null);  // overview.png
   const [notesUrl, setNotesUrl] = useState(null);
   const [imageError, setImageError] = useState(false);
+  const [overviewError, setOverviewError] = useState(false);
   const [error, setError] = useState(false);
+  const [aiVideoId, setAiVideoId] = useState(null);      // from {id}.id file
 
   // Reader overlay state
   const [readerOpen, setReaderOpen] = useState(false);
 
   // Lightbox zoom/pan states
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState(null); // which image to show in lightbox
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -35,37 +41,42 @@ export default function EduNotesPanel({ video }) {
 
   const videoId = video?.youtubeLinkID;
 
-  // Dynamically fetch notes on mount or videoId change
+  // Dynamically fetch notes + resources on mount or videoId change
   useEffect(() => {
     if (!videoId) return;
 
     setLoading(true);
     setError(false);
     setImageError(false);
+    setOverviewError(false);
     setNotes([]);
     setImageUrl(null);
+    setOverviewUrl(null);
     setNotesUrl(null);
+    setAiVideoId(null);
     setReaderOpen(false);
 
     const folders = getFolderNames(videoId);
-    const files = ['notes.md', 'input.md', 'README.md'];
-    
-    // Create matrix of configurations to attempt sequentially
+    // Standard structure: notes.md, mindmap.png, overview.png, slides.pdf, {id}.id
+    const noteFiles = ['notes.md', 'input.md', 'README.md'];
+
+    // Build attempts matrix (folder × noteFile)
     const attempts = [];
     folders.forEach(folder => {
-      files.forEach(file => {
+      noteFiles.forEach(file => {
         attempts.push({
           folder,
           file,
-          notesUrl: `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${folder}/${file}`,
-          imageUrl: `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${folder}/1.png`
+          notesUrl: `${BASE_URL}/${folder}/${file}`,
         });
       });
     });
 
     let currentAttemptIdx = 0;
+    let cancelled = false;
 
     const tryFetch = () => {
+      if (cancelled) return;
       if (currentAttemptIdx >= attempts.length) {
         setLoading(false);
         setError(true);
@@ -73,36 +84,56 @@ export default function EduNotesPanel({ video }) {
       }
 
       const attempt = attempts[currentAttemptIdx];
-      
+
       fetch(attempt.notesUrl)
         .then(res => {
           if (!res.ok) throw new Error('Not found');
           return res.text();
         })
         .then(text => {
-          // Success! Setup details
+          if (cancelled) return;
+          const folder = attempt.folder;
+
+          // Success — set notes
           setNotesUrl(attempt.notesUrl);
-          setImageUrl(attempt.imageUrl);
           setNotes(parseMarkdown(text));
+
+          // Standard image URLs
+          setImageUrl(`${BASE_URL}/${folder}/mindmap.png`);
+          setOverviewUrl(`${BASE_URL}/${folder}/overview.png`);
           setLoading(false);
+
+          // Probe for the AI video .id file by listing directory via GitHub API
+          fetch(`https://api.github.com/repos/luffytaroOnePiece/EduData/contents/YT/${folder}`)
+            .then(r => r.ok ? r.json() : [])
+            .then(files => {
+              if (cancelled) return;
+              const idFile = (Array.isArray(files) ? files : []).find(f => f.name.endsWith('.id'));
+              if (idFile) {
+                setAiVideoId(idFile.name.replace('.id', ''));
+              }
+            })
+            .catch(() => { /* optional — ignore */ });
         })
         .catch(() => {
-          // Try next combination
+          if (cancelled) return;
           currentAttemptIdx++;
           tryFetch();
         });
     };
 
     tryFetch();
+
+    return () => { cancelled = true; };
   }, [videoId]);
 
   // Markdown parsing engine
   const parseMarkdown = (mdText) => {
     if (!mdText) return [];
-    
+
     const lines = mdText.split('\n');
     const parsedBlocks = [];
-    
+
     let inList = false;
     let listItems = [];
     let inCodeBlock = false;
@@ -155,7 +186,7 @@ export default function EduNotesPanel({ video }) {
         parsedBlocks.push({ type: 'h3', text: trimmed.substring(4) });
       } else if (trimmed.startsWith('#### ')) {
         parsedBlocks.push({ type: 'h4', text: trimmed.substring(5) });
-      } 
+      }
       // Match numerical structural titles e.g. "1.0 Introduction: The Challenge..."
       else if (/^\d+(\.\d+)*\s+/.test(trimmed)) {
         parsedBlocks.push({ type: 'h2', text: trimmed, isStructural: true });
@@ -186,7 +217,7 @@ export default function EduNotesPanel({ video }) {
   // Helper to parse bold, links, and code inline formatting
   const renderInlineStyles = (text) => {
     if (!text) return '';
-    
+
     // Ignore YouTube/Mindmap image links inside markdown
     if (text.startsWith('[![YouTube') || text.startsWith('![Mind') || text.includes('MindMaps/')) {
       return null;
@@ -295,6 +326,13 @@ export default function EduNotesPanel({ video }) {
     setPanOffset({ x: 0, y: 0 });
   };
 
+  const openLightbox = (imgSrc) => {
+    setLightboxImage(imgSrc);
+    setLightboxOpen(true);
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -388,8 +426,19 @@ export default function EduNotesPanel({ video }) {
         {/* Action bar */}
         <div className="notes-header-actions">
           <button className="notes-action-btn notes-action-btn--reader" onClick={() => setReaderOpen(true)}>
-            📖 Open Reader
+            Full View
           </button>
+          {aiVideoId && (
+            <a
+              href={`https://www.youtube.com/watch?v=${aiVideoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="notes-action-btn notes-action-btn--ai"
+              title="Watch AI-generated summary video"
+            >
+              AI Video
+            </a>
+          )}
           {githubSourceUrl && (
             <a
               href={githubSourceUrl}
@@ -405,13 +454,31 @@ export default function EduNotesPanel({ video }) {
         {/* Mind Map Card */}
         {imageUrl && !imageError && (
           <div className="notes-image-container">
-            <div className="notes-image-card" onClick={() => setLightboxOpen(true)}>
-              <div className="notes-image-badge">📊 Mind Map</div>
+            <div className="notes-image-card" onClick={() => openLightbox(imageUrl)}>
+              <div className="notes-image-badge">Mind Map</div>
               <img
                 src={imageUrl}
                 alt="Study Mind Map"
                 className="notes-mind-map"
                 onError={() => setImageError(true)}
+              />
+              <div className="notes-image-overlay">
+                <span>🔍 Click to expand</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Overview Image Card */}
+        {overviewUrl && !overviewError && (
+          <div className="notes-image-container">
+            <div className="notes-image-card" onClick={() => openLightbox(overviewUrl)}>
+              <div className="notes-image-badge">Overview</div>
+              <img
+                src={overviewUrl}
+                alt="Topic Overview"
+                className="notes-mind-map"
+                onError={() => setOverviewError(true)}
               />
               <div className="notes-image-overlay">
                 <span>🔍 Click to expand</span>
@@ -461,8 +528,8 @@ export default function EduNotesPanel({ video }) {
             <article className="notes-reader-article">
               {/* Mind Map in reader */}
               {imageUrl && !imageError && (
-                <div className="notes-reader-mindmap" onClick={() => setLightboxOpen(true)}>
-                  <div className="notes-image-badge">📊 Interactive Mind Map</div>
+                <div className="notes-reader-mindmap" onClick={() => openLightbox(imageUrl)}>
+                  <div className="notes-image-badge">Interactive Mind Map</div>
                   <img
                     src={imageUrl}
                     alt="Study Mind Map"
@@ -475,6 +542,40 @@ export default function EduNotesPanel({ video }) {
                 </div>
               )}
 
+              {/* Overview in reader */}
+              {overviewUrl && !overviewError && (
+                <div className="notes-reader-mindmap" onClick={() => openLightbox(overviewUrl)}>
+                  <div className="notes-image-badge">Overview</div>
+                  <img
+                    src={overviewUrl}
+                    alt="Topic Overview"
+                    className="notes-reader-mindmap__img"
+                    onError={() => setOverviewError(true)}
+                  />
+                  <div className="notes-image-overlay">
+                    <span>🔍 Click to zoom & pan</span>
+                  </div>
+                </div>
+              )}
+
+              {/* AI Video link in reader */}
+              {aiVideoId && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${aiVideoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="notes-ai-video-card"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="notes-ai-video-card__icon">🤖</span>
+                  <div className="notes-ai-video-card__text">
+                    <strong>AI-Generated Summary Video</strong>
+                    <span>Watch an AI-curated overview of this topic</span>
+                  </div>
+                  <span className="notes-ai-video-card__arrow">↗</span>
+                </a>
+              )}
+
               {/* Full notes content */}
               <div className="notes-body notes-body--reader">
                 {renderBlocks(notes)}
@@ -485,13 +586,13 @@ export default function EduNotesPanel({ video }) {
       )}
 
       {/* ── Fullscreen Lightbox (shared between sidebar & reader) ── */}
-      {lightboxOpen && imageUrl && (
+      {lightboxOpen && lightboxImage && (
         <div
           className="notes-lightbox"
           onClick={() => setLightboxOpen(false)}
         >
           <div className="notes-lightbox-header" onClick={e => e.stopPropagation()}>
-            <span className="notes-lightbox-title">{video.title} — System Mind Map</span>
+            <span className="notes-lightbox-title">{video.title}</span>
             <button className="notes-lightbox-close" onClick={() => setLightboxOpen(false)}>✕</button>
           </div>
 
@@ -503,8 +604,8 @@ export default function EduNotesPanel({ video }) {
             onMouseLeave={handleMouseUp}
           >
             <img
-              src={imageUrl}
-              alt="System Mind Map Fullscreen"
+              src={lightboxImage}
+              alt="Fullscreen view"
               className="notes-lightbox-img"
               style={{
                 transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
@@ -520,7 +621,7 @@ export default function EduNotesPanel({ video }) {
             <span className="notes-lightbox-zoom-val">{Math.round(zoom * 100)}%</span>
             <button onClick={handleZoomIn} title="Zoom In" className="notes-lightbox-btn">+</button>
             <button onClick={handleResetZoom} title="Reset" className="notes-lightbox-btn notes-lightbox-btn--reset">↺</button>
-            <div className="notes-lightbox-tip">💡 Drag image to pan & explore system diagram</div>
+            <div className="notes-lightbox-tip">💡 Drag image to pan & explore</div>
           </div>
         </div>
       )}
