@@ -1,85 +1,100 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// ── Dynamic notes-availability cache ──────────────────────────────
-// Module-level cache so every VideoCard shares the same lookup results.
-// Values: true  = notes confirmed to exist
+// ── Dynamic resource-availability caches ──────────────────────────
+// Module-level caches so every VideoCard shares the same lookup results.
+// Values: true  = resource confirmed to exist
 //         false = probed and nothing found
 //         Promise = check in progress (de-dupes concurrent calls)
 const notesCache = new Map();
+const slidesCache = new Map();
 
-/**
- * Probes the EduData GitHub repo to see if notes exist for a given video ID.
- * Tries the same folder/file matrix that EduNotesPanel uses.
- * Returns a Promise<boolean>.
- */
-function probeNotesExist(videoId) {
-  if (notesCache.has(videoId)) {
-    const cached = notesCache.get(videoId);
-    // If it's a boolean we already have a final answer
-    if (typeof cached === 'boolean') return Promise.resolve(cached);
-    // Otherwise it's an in-flight promise — just reuse it
-    return cached;
-  }
-
-  // Build candidate URLs (same logic as EduNotesPanel.getFolderNames)
+/** Build candidate folder names for a video ID (mirrors EduNotesPanel logic) */
+function getFolderCandidates(videoId) {
   const folders = [videoId];
   if (videoId.startsWith('T')) folders.push(videoId.slice(1));
   folders.push(videoId.toLowerCase());
   if (videoId.startsWith('T')) folders.push(videoId.slice(1).toLowerCase());
-  const uniqueFolders = [...new Set(folders)];
+  return [...new Set(folders)];
+}
 
-  const files = ['notes.md', 'input.md', 'README.md'];
+/**
+ * Generic GitHub-HEAD prober. Checks a list of URLs via HEAD requests.
+ * Returns a Promise<boolean> — true on first 200, false if all fail.
+ */
+function probeResource(videoId, cache, buildUrls) {
+  if (cache.has(videoId)) {
+    const cached = cache.get(videoId);
+    if (typeof cached === 'boolean') return Promise.resolve(cached);
+    return cached; // in-flight promise
+  }
 
-  const urls = [];
-  uniqueFolders.forEach(folder => {
-    files.forEach(file => {
-      urls.push(
-        `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${folder}/${file}`
-      );
-    });
-  });
+  const urls = buildUrls(videoId);
 
-  // Fire lightweight HEAD requests; resolve true on first success
   const promise = (async () => {
     for (const url of urls) {
       try {
         const res = await fetch(url, { method: 'HEAD', mode: 'cors' });
-        if (res.ok) {
-          notesCache.set(videoId, true);
-          return true;
-        }
-      } catch {
-        // network error — try next
-      }
+        if (res.ok) { cache.set(videoId, true); return true; }
+      } catch { /* next */ }
     }
-    notesCache.set(videoId, false);
+    cache.set(videoId, false);
     return false;
   })();
 
-  notesCache.set(videoId, promise); // store in-flight promise to de-dupe
+  cache.set(videoId, promise);
   return promise;
+}
+
+/** Probe for markdown notes */
+function probeNotesExist(videoId) {
+  return probeResource(videoId, notesCache, (id) => {
+    const folders = getFolderCandidates(id);
+    const files = ['notes.md', 'input.md', 'README.md'];
+    const urls = [];
+    folders.forEach(f => files.forEach(file =>
+      urls.push(`https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${f}/${file}`)
+    ));
+    return urls;
+  });
+}
+
+/** Probe for slides.pdf */
+function probeSlidesExist(videoId) {
+  return probeResource(videoId, slidesCache, (id) => {
+    return getFolderCandidates(id).map(f =>
+      `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${f}/slides.pdf`
+    );
+  });
 }
 
 /** React hook: returns whether notes exist for the given video ID. */
 function useHasNotes(videoId) {
   const [hasNotes, setHasNotes] = useState(() => {
-    // Initialise synchronously from cache if already resolved
     const cached = videoId ? notesCache.get(videoId) : undefined;
     return cached === true;
   });
-
   useEffect(() => {
     if (!videoId) return;
     let cancelled = false;
-
-    probeNotesExist(videoId).then(result => {
-      if (!cancelled) setHasNotes(result);
-    });
-
+    probeNotesExist(videoId).then(r => { if (!cancelled) setHasNotes(r); });
     return () => { cancelled = true; };
   }, [videoId]);
-
   return hasNotes;
+}
+
+/** React hook: returns whether slides.pdf exists for the given video ID. */
+function useHasSlides(videoId) {
+  const [hasSlides, setHasSlides] = useState(() => {
+    const cached = videoId ? slidesCache.get(videoId) : undefined;
+    return cached === true;
+  });
+  useEffect(() => {
+    if (!videoId) return;
+    let cancelled = false;
+    probeSlidesExist(videoId).then(r => { if (!cancelled) setHasSlides(r); });
+    return () => { cancelled = true; };
+  }, [videoId]);
+  return hasSlides;
 }
 
 const FALLBACK_THUMBNAIL = 'data:image/svg+xml,' + encodeURIComponent(`
@@ -133,8 +148,9 @@ export default function VideoCard({ video, onClick, index, isLocal, isFav, onTog
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  // Dynamic notes availability (probes GitHub, cached across renders)
+  // Dynamic resource availability (probes GitHub, cached across renders)
   const hasNotes = useHasNotes(video.youtubeLinkID);
+  const hasSlides = useHasSlides(video.youtubeLinkID);
 
   // Hover Preview State
   const [showIframe, setShowIframe] = useState(false);
@@ -287,7 +303,7 @@ export default function VideoCard({ video, onClick, index, isLocal, isFav, onTog
 
         {/* Favorites button */}
         {isLocal && (
-          <button 
+          <button
             className={`video-card__fav-btn ${isFav ? 'video-card__fav-btn--active' : ''}`}
             onClick={(e) => { e.stopPropagation(); onToggleFav(video); }}
             title={isFav ? "Remove from Favorites" : "Add to Favorites"}
@@ -319,14 +335,14 @@ export default function VideoCard({ video, onClick, index, isLocal, isFav, onTog
         {isLocal && (
           <button
             className={`video-card__rating-btn ${rating > 0 ? 'video-card__rating-btn--active' : ''}`}
-            onClick={(e) => { 
-              e.stopPropagation(); 
+            onClick={(e) => {
+              e.stopPropagation();
               setShowRatingPopover(prev => !prev);
               setShowTagPopover(false);
             }}
             title="Set Rating"
           >
-            <span style={{color: rating >= 8 ? '#1ed760' : (rating > 0 ? '#fff' : 'rgba(255,255,255,0.6)')}}>★</span>
+            <span style={{ color: rating >= 8 ? '#1ed760' : (rating > 0 ? '#fff' : 'rgba(255,255,255,0.6)') }}>★</span>
             {rating > 0 && <span className="video-card__rating-val">{rating}</span>}
           </button>
         )}
@@ -384,24 +400,24 @@ export default function VideoCard({ video, onClick, index, isLocal, isFav, onTog
             <button className="video-card__tag-popover-close" onClick={() => setShowRatingPopover(false)}>✕</button>
           </div>
           <div className="video-card__rating-grid">
-             {[...Array(10)].map((_, i) => {
-                const score = i + 1;
-                return (
-                  <button 
-                    key={score} 
-                    className={`video-card__rating-num ${rating === score ? 'video-card__rating-num--active' : ''}`}
-                    onClick={(e) => { e.stopPropagation(); onSetRating(video.youtubeLinkID, score); setShowRatingPopover(false); }}
-                  >
-                    {score}
-                  </button>
-                )
-             })}
+            {[...Array(10)].map((_, i) => {
+              const score = i + 1;
+              return (
+                <button
+                  key={score}
+                  className={`video-card__rating-num ${rating === score ? 'video-card__rating-num--active' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); onSetRating(video.youtubeLinkID, score); setShowRatingPopover(false); }}
+                >
+                  {score}
+                </button>
+              )
+            })}
           </div>
-          <button 
-             className="video-card__rating-clear"
-             onClick={(e) => { e.stopPropagation(); onSetRating(video.youtubeLinkID, 0); setShowRatingPopover(false); }}
+          <button
+            className="video-card__rating-clear"
+            onClick={(e) => { e.stopPropagation(); onSetRating(video.youtubeLinkID, 0); setShowRatingPopover(false); }}
           >
-             Clear Rating
+            Clear Rating
           </button>
         </div>
       )}
@@ -412,7 +428,10 @@ export default function VideoCard({ video, onClick, index, isLocal, isFav, onTog
         <div className="video-card__meta">
           <span className="video-card__category">{video.type}</span>
           {hasNotes && (
-            <span className="video-card__notes-badge" title="Study notes & interactive mindmap available">🧠 Notes</span>
+            <span className="video-card__notes-badge" title="Study notes & interactive mindmap available">Notes</span>
+          )}
+          {hasSlides && (
+            <span className="video-card__slides-badge" title="Lecture slides available">Slides</span>
           )}
           {video.date && (
             <span className="video-card__date" title={formatAbsoluteDate(video.date)}>

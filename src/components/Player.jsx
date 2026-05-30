@@ -3,6 +3,7 @@ import YouTube from 'react-youtube';
 import RelatedPanel from './RelatedPanel';
 import QueuePanel from './QueuePanel';
 import EduNotesPanel from './EduNotesPanel';
+import EduSlidesPanel from './EduSlidesPanel';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -45,7 +46,7 @@ export default function Player({
   onQueueRemove,
   onToggleAutoplay
 }) {
-  const [sidebarTab, setSidebarTab] = useState('queue'); // 'queue' | 'related' | 'notes'
+  const [sidebarTab, setSidebarTab] = useState('queue'); // 'queue' | 'related' | 'notes' | 'slides'
   const [upNextCountdown, setUpNextCountdown] = useState(null); // null or { seconds, video }
   const countdownRef = useRef(null);
   const overlayRef = useRef(null);
@@ -58,12 +59,12 @@ export default function Player({
     const el = overlayRef.current;
     if (!el) return;
     const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-    if (rfs) rfs.call(el).catch(() => {});
+    if (rfs) rfs.call(el).catch(() => { });
   }, []);
 
   const exitFullscreen = useCallback(() => {
     const exitFs = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
-    if (exitFs && document.fullscreenElement) exitFs.call(document).catch(() => {});
+    if (exitFs && document.fullscreenElement) exitFs.call(document).catch(() => { });
   }, []);
 
   const toggleFullscreen = useCallback(() => {
@@ -347,7 +348,7 @@ export default function Player({
           </div>
 
         </div>
-        
+
         {!isMiniPlayer && (
           <div className="player-modal__sidebar-wrapper">
             <div className="player-sidebar">
@@ -372,7 +373,13 @@ export default function Player({
                   className={`player-sidebar__tab ${sidebarTab === 'notes' ? 'player-sidebar__tab--active' : ''}`}
                   onClick={() => setSidebarTab('notes')}
                 >
-                  Notes 🧠
+                  Notes
+                </button>
+                <button
+                  className={`player-sidebar__tab ${sidebarTab === 'slides' ? 'player-sidebar__tab--active' : ''}`}
+                  onClick={() => setSidebarTab('slides')}
+                >
+                  Slides
                 </button>
               </div>
 
@@ -394,6 +401,8 @@ export default function Player({
                     allVideos={allVideos}
                     onVideoSelect={onVideoSelect}
                   />
+                ) : sidebarTab === 'slides' ? (
+                  <EduSlidesPanel video={video} />
                 ) : (
                   <EduNotesPanel video={video} />
                 )}
