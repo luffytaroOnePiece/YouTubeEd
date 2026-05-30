@@ -1,37 +1,42 @@
 {
-  "lastUpdated": "2026-05-30T02:16:06.343Z",
+  "lastUpdated": "2026-05-30T02:18:05.878Z",
   "groups": {
-    "Travel": {
+    "System Design": {
       "icon": "",
       "categories": {
-        "System Design": {
-          "Arpit Bhayani": [
+        "Arpit Bhayani": {
+          "Blogs": [
             {
               "youtubeLinkID": "pFBCgFzS2W8",
               "title": "How PayPal Beat the Thundering Herd Problem and Fixed Their Architecture",
               "thumbnail": "https://img.youtube.com/vi/pFBCgFzS2W8/maxresdefault.jpg",
               "duration": "12:53",
               "durationSec": 773,
-              "group": "Travel",
-              "category": "System Design",
-              "type": "Arpit Bhayani",
+              "group": "System Design",
+              "category": "Arpit Bhayani",
+              "type": "Blogs",
               "date": "2025-08-02T05:27:06-07:00",
               "resolution": "1080p",
               "viewCount": 54951
             }
           ]
-        },
-        "Github": {
-          "Fundamentals": [
+        }
+      }
+    },
+    "Github": {
+      "icon": "",
+      "categories": {
+        "Git Operations": {
+          "FUndementals": [
             {
               "youtubeLinkID": "0chZFIZLR_0",
               "title": "Git MERGE vs REBASE: Everything You Need to Know",
               "thumbnail": "https://img.youtube.com/vi/0chZFIZLR_0/maxresdefault.jpg",
               "duration": "4:34",
               "durationSec": 274,
-              "group": "Travel",
-              "category": "Github",
-              "type": "Fundamentals",
+              "group": "Github",
+              "category": "Git Operations",
+              "type": "FUndementals",
               "date": "2023-08-10T08:30:00-07:00",
               "resolution": "1080p",
               "viewCount": 712905

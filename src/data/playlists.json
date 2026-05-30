@@ -1,12 +1,17 @@
 {
-  "Travel": {
+  "System Design": {
     "icon": "",
     "categories": {
-      "System Design": {
-        "Arpit Bhayani": "PLr8N8x0VipGbo7W3vjASbY-EZcW14AOnE"
-      },
-      "Github": {
-        "Fundamentals": "PLr8N8x0VipGb0NhjMLCv7XPxiiyuFseGP"
+      "Arpit Bhayani": {
+        "Blogs": "PLr8N8x0VipGbo7W3vjASbY-EZcW14AOnE"
+      }
+    }
+  },
+  "Github": {
+    "icon": "",
+    "categories": {
+      "Git Operations": {
+        "FUndementals": "PLr8N8x0VipGb0NhjMLCv7XPxiiyuFseGP"
       }
     }
   }
