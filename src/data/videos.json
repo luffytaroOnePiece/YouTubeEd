@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-05-30T04:12:39.094Z",
+  "lastUpdated": "2026-05-30T12:57:11.627Z",
   "groups": {
     "System Design": {
       "icon": "",
@@ -31,6 +31,21 @@
               "date": "2025-07-18T05:18:17-07:00",
               "resolution": "1080p",
               "viewCount": 35511
+            }
+          ],
+          "Redis Internals": [
+            {
+              "youtubeLinkID": "h30k7YixrMo",
+              "title": "Why and How Is Single-Threaded Redis Fast and Can Handle Multiple Connections? | Redis Internals",
+              "thumbnail": "https://img.youtube.com/vi/h30k7YixrMo/maxresdefault.jpg",
+              "duration": "22:04",
+              "durationSec": 1324,
+              "group": "System Design",
+              "category": "Arpit Bhayani",
+              "type": "Redis Internals",
+              "date": "2022-10-13T21:30:09-07:00",
+              "resolution": "1080p",
+              "viewCount": 108813
             }
           ]
         }
