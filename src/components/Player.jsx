@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import YouTube from 'react-youtube';
 import RelatedPanel from './RelatedPanel';
 import QueuePanel from './QueuePanel';
+import EduNotesPanel from './EduNotesPanel';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -44,7 +45,7 @@ export default function Player({
   onQueueRemove,
   onToggleAutoplay
 }) {
-  const [sidebarTab, setSidebarTab] = useState('queue'); // 'queue' | 'related'
+  const [sidebarTab, setSidebarTab] = useState('queue'); // 'queue' | 'related' | 'notes'
   const [upNextCountdown, setUpNextCountdown] = useState(null); // null or { seconds, video }
   const countdownRef = useRef(null);
   const overlayRef = useRef(null);
@@ -344,6 +345,7 @@ export default function Player({
               <span className="player-modal__date">⏱ {video.duration}</span>
             )}
           </div>
+
         </div>
         
         {!isMiniPlayer && (
@@ -366,6 +368,12 @@ export default function Player({
                 >
                   Related
                 </button>
+                <button
+                  className={`player-sidebar__tab ${sidebarTab === 'notes' ? 'player-sidebar__tab--active' : ''}`}
+                  onClick={() => setSidebarTab('notes')}
+                >
+                  Notes 🧠
+                </button>
               </div>
 
               {/* Tab Content */}
@@ -380,12 +388,14 @@ export default function Player({
                     onToggleAutoplay={onToggleAutoplay}
                     currentVideo={video}
                   />
-                ) : (
+                ) : sidebarTab === 'related' ? (
                   <RelatedPanel
                     currentVideo={video}
                     allVideos={allVideos}
                     onVideoSelect={onVideoSelect}
                   />
+                ) : (
+                  <EduNotesPanel video={video} />
                 )}
               </div>
             </div>

@@ -1,5 +1,87 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// ── Dynamic notes-availability cache ──────────────────────────────
+// Module-level cache so every VideoCard shares the same lookup results.
+// Values: true  = notes confirmed to exist
+//         false = probed and nothing found
+//         Promise = check in progress (de-dupes concurrent calls)
+const notesCache = new Map();
+
+/**
+ * Probes the EduData GitHub repo to see if notes exist for a given video ID.
+ * Tries the same folder/file matrix that EduNotesPanel uses.
+ * Returns a Promise<boolean>.
+ */
+function probeNotesExist(videoId) {
+  if (notesCache.has(videoId)) {
+    const cached = notesCache.get(videoId);
+    // If it's a boolean we already have a final answer
+    if (typeof cached === 'boolean') return Promise.resolve(cached);
+    // Otherwise it's an in-flight promise — just reuse it
+    return cached;
+  }
+
+  // Build candidate URLs (same logic as EduNotesPanel.getFolderNames)
+  const folders = [videoId];
+  if (videoId.startsWith('T')) folders.push(videoId.slice(1));
+  folders.push(videoId.toLowerCase());
+  if (videoId.startsWith('T')) folders.push(videoId.slice(1).toLowerCase());
+  const uniqueFolders = [...new Set(folders)];
+
+  const files = ['notes.md', 'input.md', 'README.md'];
+
+  const urls = [];
+  uniqueFolders.forEach(folder => {
+    files.forEach(file => {
+      urls.push(
+        `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${folder}/${file}`
+      );
+    });
+  });
+
+  // Fire lightweight HEAD requests; resolve true on first success
+  const promise = (async () => {
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { method: 'HEAD', mode: 'cors' });
+        if (res.ok) {
+          notesCache.set(videoId, true);
+          return true;
+        }
+      } catch {
+        // network error — try next
+      }
+    }
+    notesCache.set(videoId, false);
+    return false;
+  })();
+
+  notesCache.set(videoId, promise); // store in-flight promise to de-dupe
+  return promise;
+}
+
+/** React hook: returns whether notes exist for the given video ID. */
+function useHasNotes(videoId) {
+  const [hasNotes, setHasNotes] = useState(() => {
+    // Initialise synchronously from cache if already resolved
+    const cached = videoId ? notesCache.get(videoId) : undefined;
+    return cached === true;
+  });
+
+  useEffect(() => {
+    if (!videoId) return;
+    let cancelled = false;
+
+    probeNotesExist(videoId).then(result => {
+      if (!cancelled) setHasNotes(result);
+    });
+
+    return () => { cancelled = true; };
+  }, [videoId]);
+
+  return hasNotes;
+}
+
 const FALLBACK_THUMBNAIL = 'data:image/svg+xml,' + encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
   <rect width="640" height="360" fill="#1e1e1e"/>
@@ -50,6 +132,9 @@ function formatAbsoluteDate(dateStr) {
 export default function VideoCard({ video, onClick, index, isLocal, isFav, onToggleFav, tags, onToggleTag, rating, onSetRating }) {
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+
+  // Dynamic notes availability (probes GitHub, cached across renders)
+  const hasNotes = useHasNotes(video.youtubeLinkID);
 
   // Hover Preview State
   const [showIframe, setShowIframe] = useState(false);
@@ -326,6 +411,9 @@ export default function VideoCard({ video, onClick, index, isLocal, isFav, onTog
         <h3 className="video-card__title" title={video.title}>{video.title}</h3>
         <div className="video-card__meta">
           <span className="video-card__category">{video.type}</span>
+          {hasNotes && (
+            <span className="video-card__notes-badge" title="Study notes & interactive mindmap available">🧠 Notes</span>
+          )}
           {video.date && (
             <span className="video-card__date" title={formatAbsoluteDate(video.date)}>
               {formatDate(video.date)}

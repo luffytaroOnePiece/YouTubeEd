@@ -58,9 +58,9 @@ export default function FilterBar({
     ...availableResolutions.map((r) => ({ value: r, label: r })),
   ];
 
-  const isTeluguActive = activeGroup === 'Music' && activeCategory === 'Telugu';
-  const isHindiActive = activeGroup === 'Music' && activeCategory === 'Hindi';
-  const is8KActive = activeResolution === '8K' && activeGroup === 'All';
+  const isSystemDesignActive = activeGroup === 'System Design';
+  const isAIActive = activeGroup === 'AI';
+
 
   // Build sort options
   const sortOptions = [
@@ -166,22 +166,16 @@ export default function FilterBar({
           <div className="filter-bar__divider" />
           <span className="filter-bar__quick-label">Quick Access</span>
           <button
-            className={`filter-bar__quick-chip ${isTeluguActive ? 'filter-bar__quick-chip--active' : ''}`}
-            onClick={() => isTeluguActive ? onReset() : onQuickAccess('Music', 'Telugu', 'All')}
+            className={`filter-bar__quick-chip ${isAIActive ? 'filter-bar__quick-chip--active' : ''}`}
+            onClick={() => isAIActive ? onReset() : onQuickAccess('AI', 'All', 'All')}
           >
-            Telugu
+            AI
           </button>
           <button
-            className={`filter-bar__quick-chip ${isHindiActive ? 'filter-bar__quick-chip--active' : ''}`}
-            onClick={() => isHindiActive ? onReset() : onQuickAccess('Music', 'Hindi', 'All')}
+            className={`filter-bar__quick-chip ${isSystemDesignActive ? 'filter-bar__quick-chip--active' : ''}`}
+            onClick={() => isSystemDesignActive ? onReset() : onQuickAccess('System Design', 'All', 'All')}
           >
-            Hindi
-          </button>
-          <button
-            className={`filter-bar__quick-chip ${is8KActive ? 'filter-bar__quick-chip--active' : ''}`}
-            onClick={() => is8KActive ? onReset() : onQuickAccess('All', 'All', '8K')}
-          >
-            8K Ultra
+            System Design
           </button>
 
         </div>
