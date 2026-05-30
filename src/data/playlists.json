@@ -10,7 +10,9 @@
   "AI": {
     "icon": "",
     "categories": {
-      "Andrej Karapathy": "PLr8N8x0VipGYTcnXOpCzTrFzMgrpu1yxC"
+      "Andrej Karapathy": {
+        "llm": "PLr8N8x0VipGYTcnXOpCzTrFzMgrpu1yxC"
+      }
     }
   },
   "Github": {

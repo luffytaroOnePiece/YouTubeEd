@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-05-30T03:57:09.061Z",
+  "lastUpdated": "2026-05-30T04:12:39.094Z",
   "groups": {
     "System Design": {
       "icon": "",
@@ -39,7 +39,23 @@
     "AI": {
       "icon": "",
       "categories": {
-        "Andrej Karapathy": {}
+        "Andrej Karapathy": {
+          "llm": [
+            {
+              "youtubeLinkID": "zjkBMFhNj_g",
+              "title": "[1hr Talk] Intro to Large Language Models",
+              "thumbnail": "https://img.youtube.com/vi/zjkBMFhNj_g/maxresdefault.jpg",
+              "duration": "59:48",
+              "durationSec": 3588,
+              "group": "AI",
+              "category": "Andrej Karapathy",
+              "type": "llm",
+              "date": "2023-11-22T18:27:48-08:00",
+              "resolution": "1080p",
+              "viewCount": 3705753
+            }
+          ]
+        }
       }
     },
     "Github": {
