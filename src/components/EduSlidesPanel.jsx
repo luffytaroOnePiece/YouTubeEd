@@ -191,20 +191,12 @@ export default function EduSlidesPanel({ video }) {
       <div className="slides-panel">
         {/* Action bar */}
         <div className="notes-header-actions">
-          {pdfUrl && (
-            <button
-              className="notes-action-btn slides-action-btn--fullscreen"
-              onClick={() => { setActiveTab('pdf'); setFullscreen(true); }}
-            >
-              Slides ⛶
-            </button>
-          )}
           {htmlUrl && (
             <button
               className="notes-action-btn slides-action-btn--fullscreen"
               onClick={() => { setActiveTab('html'); setFullscreen(true); }}
             >
-              Code ⛶
+              Code
             </button>
           )}
           {pdfUrl && (
@@ -235,7 +227,7 @@ export default function EduSlidesPanel({ video }) {
               className={`slides-switch-btn ${activeTab === 'pdf' ? 'slides-switch-btn--active' : ''}`}
               onClick={() => setActiveTab('pdf')}
             >
-              <span className="slides-switch-btn__icon">📄</span>
+              <span className="slides-switch-btn__icon"></span>
               <span className="slides-switch-btn__text">Slides</span>
             </button>
             <button
@@ -245,7 +237,7 @@ export default function EduSlidesPanel({ video }) {
                 setFullscreen(true); // Open in full screen view as requested
               }}
             >
-              <span className="slides-switch-btn__icon">💻</span>
+              <span className="slides-switch-btn__icon"></span>
               <span className="slides-switch-btn__text">Code (Fullscreen)</span>
             </button>
           </div>
@@ -255,7 +247,7 @@ export default function EduSlidesPanel({ video }) {
         {pdfUrl && activeTab !== 'html' ? (
           /* Render the PDF viewer in the sidebar */
           <div className="slides-viewer-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div className="slides-viewer-badge">📄 Lecture Slides (PDF)</div>
+            <div className="slides-viewer-badge">Lecture Slides (PDF)</div>
             <iframe
               src={viewerUrl}
               className="slides-viewer-iframe"
@@ -267,11 +259,11 @@ export default function EduSlidesPanel({ video }) {
           </div>
         ) : htmlUrl && (activeTab === 'html' || !pdfUrl) ? (
           /* Render banner/iframe for HTML. User wants it in full screen only */
-          <div className="slides-panel--empty" style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <div className="notes-empty-card" style={{margin: '1rem', textAlign: 'center'}}>
-              <div className="notes-empty-icon">💻</div>
+          <div className="slides-panel--empty" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="notes-empty-card" style={{ margin: '1rem', textAlign: 'center' }}>
+              <div className="notes-empty-icon"></div>
               <h3 className="notes-empty-title">Code Presentation</h3>
-              <p className="notes-empty-text" style={{marginBottom: '1rem'}}>
+              <p className="notes-empty-text" style={{ marginBottom: '1rem' }}>
                 Interactive code presentation is best viewed in full screen.
               </p>
               <button
@@ -291,9 +283,6 @@ export default function EduSlidesPanel({ video }) {
           {/* Toolbar */}
           <div className="slides-fullscreen-toolbar" onClick={(e) => e.stopPropagation()}>
             <div className="notes-reader-toolbar__left">
-              <span className="notes-reader-toolbar__icon">
-                {activeTab === 'html' ? '🌐' : '📄'}
-              </span>
               <span className="notes-reader-toolbar__title">
                 {video.title} — {activeTab === 'html' ? 'Interactive Presentation (Code)' : 'Slides PDF'}
               </span>
@@ -306,13 +295,13 @@ export default function EduSlidesPanel({ video }) {
                     className={`slides-fullscreen-btn ${activeTab === 'pdf' ? 'slides-fullscreen-btn--active' : ''}`}
                     onClick={() => setActiveTab('pdf')}
                   >
-                    📄 Slides
+                    Slides
                   </button>
                   <button
                     className={`slides-fullscreen-btn ${activeTab === 'html' ? 'slides-fullscreen-btn--active' : ''}`}
                     onClick={() => setActiveTab('html')}
                   >
-                    💻 Code
+                    Code
                   </button>
                 </div>
               )}
