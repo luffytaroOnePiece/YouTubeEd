@@ -6030,3 +6030,330 @@ body::-webkit-scrollbar {
   transform: translate(2px, -2px);
   color: #86efac;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   EMBEDDED AI VIDEO PLAYER
+   ═══════════════════════════════════════════════════════════════ */
+.notes-ai-embed {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #09090b;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.notes-ai-embed__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(34, 197, 94, 0.06);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.12);
+}
+
+.notes-ai-embed__badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #86efac;
+  letter-spacing: 0.2px;
+}
+
+.notes-ai-embed__yt-link {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.notes-ai-embed__yt-link:hover {
+  color: #86efac;
+}
+
+.notes-ai-embed__player {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* 16:9 */
+}
+
+.notes-ai-embed__iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Reader variant — larger with more presence */
+.notes-ai-embed--reader {
+  margin-bottom: 32px;
+  border-radius: 16px;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 0.5px rgba(34, 197, 94, 0.1) inset;
+}
+
+.notes-ai-embed--reader .notes-ai-embed__header {
+  padding: 12px 20px;
+}
+
+.notes-ai-embed--reader .notes-ai-embed__badge {
+  font-size: 0.78rem;
+}
+
+.notes-ai-embed--reader .notes-ai-embed__yt-link {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.06);
+  transition: all 0.2s ease;
+}
+
+.notes-ai-embed--reader .notes-ai-embed__yt-link:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #bbf7d0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CSV DATA TABLE
+   ═══════════════════════════════════════════════════════════════ */
+.notes-table-wrapper {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #09090b;
+  border: 1px solid rgba(251, 191, 36, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.notes-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(251, 191, 36, 0.05);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+}
+
+.notes-table-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: 0.2px;
+}
+
+.notes-table-count {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.notes-table-scroll {
+  overflow-x: auto;
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Thin scrollbars */
+.notes-table-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.notes-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notes-table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.notes-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.notes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.notes-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.notes-table th {
+  background: #16140f; /* Solid opaque dark amber tint to prevent scrolling data from showing behind it */
+  color: #fcd34d;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1.5px solid rgba(251, 191, 36, 0.15);
+  white-space: nowrap;
+}
+
+.notes-table td {
+  padding: 8px 14px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  white-space: normal;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Zebra striping */
+.notes-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.notes-table tbody tr:hover {
+  background: rgba(251, 191, 36, 0.04);
+}
+
+/* First column emphasis */
+.notes-table td:first-child {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+/* Reader variant */
+.notes-table-wrapper--reader {
+  margin-bottom: 32px;
+  border-radius: 16px;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 0.5px rgba(251, 191, 36, 0.08) inset;
+}
+
+.notes-table-wrapper--reader .notes-table-header {
+  padding: 12px 20px;
+}
+
+.notes-table-wrapper--reader .notes-table-badge {
+  font-size: 0.78rem;
+}
+
+.notes-table-wrapper--reader .notes-table-scroll {
+  max-height: 500px;
+}
+
+.notes-table-wrapper--reader .notes-table {
+  font-size: 0.85rem;
+}
+
+.notes-table-wrapper--reader .notes-table th {
+  padding: 12px 18px;
+  font-size: 0.76rem;
+}
+
+.notes-table-wrapper--reader .notes-table td {
+  padding: 10px 18px;
+  max-width: 400px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESIZABLE TABLE INTERACTION STYLES
+   ═══════════════════════════════════════════════════════════════ */
+.notes-table-resizable {
+  position: relative;
+  max-width: calc(100vw - 96px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: box-shadow 0.2s ease;
+  overflow: visible !important; /* Ensure drag handles are not clipped by wrapper overflow: hidden */
+  
+  /* Symmetrical center breakout expansion */
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.notes-table-resizable .notes-table-scroll {
+  flex: 1;
+  overflow: auto;
+}
+
+.notes-table-header__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notes-table-header__tip {
+  font-size: 0.62rem;
+  color: rgba(251, 191, 36, 0.4);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+/* Resize drag zones */
+.notes-resize-handle {
+  position: absolute;
+  user-select: none;
+}
+
+/* Right edge handle (horizontal resize) */
+.notes-resize-handle--r {
+  top: 0;
+  right: -5px;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.notes-resize-handle--r:hover,
+.notes-resize-handle--r:active {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+/* Bottom edge handle (vertical resize) */
+.notes-resize-handle--b {
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  cursor: row-resize;
+  z-index: 10;
+}
+
+.notes-resize-handle--b:hover,
+.notes-resize-handle--b:active {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+/* Diagonal corner handle (both directions) */
+.notes-resize-handle--corner {
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  z-index: 11;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 2px 2px 0;
+}
+
+.notes-resize-handle--corner svg {
+  transition: fill 0.2s ease;
+}
+
+.notes-resize-handle--corner:hover svg {
+  fill: rgba(251, 191, 36, 0.85);
+}

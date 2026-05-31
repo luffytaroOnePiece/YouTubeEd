@@ -17,6 +17,132 @@ const getFolderNames = (videoId) => {
 
 const BASE_URL = 'https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT';
 
+// Resizable Table Component for premium interactive CSV viewing
+const ResizableTable = ({ data }) => {
+  const [dimensions, setDimensions] = useState({ width: null, height: 360 });
+  const containerRef = useRef(null);
+
+  // Drag state refs
+  const isResizingRef = useRef(false);
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const startDimRef = useRef({ width: 0, height: 0 });
+  const resizeDirectionRef = useRef('both'); // 'horizontal', 'vertical', or 'both'
+
+  const handleMouseDown = (e, direction) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isResizingRef.current = true;
+    resizeDirectionRef.current = direction;
+
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      startDimRef.current = { width: rect.width, height: rect.height };
+    }
+
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isResizingRef.current) return;
+
+    const deltaX = e.clientX - startPosRef.current.x;
+    const deltaY = e.clientY - startPosRef.current.y;
+
+    setDimensions((prev) => {
+      const newWidth = resizeDirectionRef.current !== 'vertical'
+        ? Math.max(300, Math.min(1600, startDimRef.current.width + 2 * deltaX))
+        : (prev.width || startDimRef.current.width);
+
+      const newHeight = resizeDirectionRef.current !== 'horizontal'
+        ? Math.max(150, Math.min(1200, startDimRef.current.height + deltaY))
+        : prev.height;
+
+      return { width: newWidth, height: newHeight };
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isResizingRef.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
+  if (!data) return null;
+
+  const style = {
+    height: `${dimensions.height}px`,
+  };
+  if (dimensions.width !== null) {
+    style.width = `${dimensions.width}px`;
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="notes-table-wrapper notes-table-wrapper--reader notes-table-resizable"
+      style={style}
+    >
+      <div className="notes-table-header">
+        <div className="notes-table-header__left">
+          <span className="notes-table-badge">Table</span>
+          <span className="notes-table-count">{data.rows.length} rows</span>
+        </div>
+        <div className="notes-table-header__tip">
+          <span>↕ Drag edges/corner to resize ↔</span>
+        </div>
+      </div>
+      <div className="notes-table-scroll" style={{ height: `calc(100% - 40px)` }}>
+        <table className="notes-table">
+          <thead>
+            <tr>
+              {data.headers.map((h, i) => (
+                <th key={i}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row, ri) => (
+              <tr key={ri}>
+                {row.map((cell, ci) => (
+                  <td key={ci}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Resize drag zones */}
+      <div
+        className="notes-resize-handle notes-resize-handle--r"
+        onMouseDown={(e) => handleMouseDown(e, 'horizontal')}
+      />
+      <div
+        className="notes-resize-handle notes-resize-handle--b"
+        onMouseDown={(e) => handleMouseDown(e, 'vertical')}
+      />
+      <div
+        className="notes-resize-handle notes-resize-handle--corner"
+        onMouseDown={(e) => handleMouseDown(e, 'both')}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 0L0 10H10V0Z" fill="rgba(251, 191, 36, 0.4)" />
+        </svg>
+      </div>
+    </div>
+  );
+};
+
 export default function EduNotesPanel({ video }) {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState([]);
@@ -27,6 +153,7 @@ export default function EduNotesPanel({ video }) {
   const [overviewError, setOverviewError] = useState(false);
   const [error, setError] = useState(false);
   const [aiVideoId, setAiVideoId] = useState(null);      // from {id}.id file
+  const [tableData, setTableData] = useState(null);       // from table.csv
 
   // Reader overlay state
   const [readerOpen, setReaderOpen] = useState(false);
@@ -54,6 +181,7 @@ export default function EduNotesPanel({ video }) {
     setOverviewUrl(null);
     setNotesUrl(null);
     setAiVideoId(null);
+    setTableData(null);
     setReaderOpen(false);
 
     const folders = getFolderNames(videoId);
@@ -103,6 +231,15 @@ export default function EduNotesPanel({ video }) {
           setOverviewUrl(`${BASE_URL}/${folder}/overview.png`);
           setLoading(false);
 
+          // Fetch table.csv (optional)
+          fetch(`${BASE_URL}/${folder}/table.csv`)
+            .then(r => { if (!r.ok) throw new Error('no csv'); return r.text(); })
+            .then(csv => {
+              if (cancelled) return;
+              setTableData(parseCsv(csv));
+            })
+            .catch(() => { /* optional */ });
+
           // Probe for the AI video .id file by listing directory via GitHub API
           fetch(`https://api.github.com/repos/luffytaroOnePiece/EduData/contents/YT/${folder}`)
             .then(r => r.ok ? r.json() : [])
@@ -126,6 +263,52 @@ export default function EduNotesPanel({ video }) {
 
     return () => { cancelled = true; };
   }, [videoId]);
+
+  // CSV parser — handles quoted fields with commas and newlines
+  const parseCsv = (text) => {
+    if (!text || !text.trim()) return null;
+    const rows = [];
+    let current = [];
+    let field = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"' && text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          field += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          current.push(field.trim());
+          field = '';
+        } else if (ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) {
+          current.push(field.trim());
+          if (current.some(c => c !== '')) rows.push(current);
+          current = [];
+          field = '';
+          if (ch === '\r') i++;
+        } else {
+          field += ch;
+        }
+      }
+    }
+    // last field
+    current.push(field.trim());
+    if (current.some(c => c !== '')) rows.push(current);
+
+    if (rows.length < 2) return null;
+    return { headers: rows[0], rows: rows.slice(1) };
+  };
+
+
 
   // Markdown parsing engine
   const parseMarkdown = (mdText) => {
@@ -487,6 +670,8 @@ export default function EduNotesPanel({ video }) {
           </div>
         )}
 
+
+
         {/* Notes Body (sidebar preview) */}
         <div className="notes-body">
           {renderBlocks(notes)}
@@ -558,23 +743,34 @@ export default function EduNotesPanel({ video }) {
                 </div>
               )}
 
-              {/* AI Video link in reader */}
+              {/* Embedded AI Video in Reader */}
               {aiVideoId && (
-                <a
-                  href={`https://www.youtube.com/watch?v=${aiVideoId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="notes-ai-video-card"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span className="notes-ai-video-card__icon">🤖</span>
-                  <div className="notes-ai-video-card__text">
-                    <strong>AI-Generated Summary Video</strong>
-                    <span>Watch an AI-curated overview of this topic</span>
+                <div className="notes-ai-embed notes-ai-embed--reader" onClick={(e) => e.stopPropagation()}>
+                  <div className="notes-ai-embed__header">
+                    <span className="notes-ai-embed__badge">🤖 AI-Generated Summary Video</span>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${aiVideoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="notes-ai-embed__yt-link"
+                    >
+                      Open on YouTube ↗
+                    </a>
                   </div>
-                  <span className="notes-ai-video-card__arrow">↗</span>
-                </a>
+                  <div className="notes-ai-embed__player">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${aiVideoId}`}
+                      title="AI Summary Video"
+                      className="notes-ai-embed__iframe"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
               )}
+
+              {/* Table from CSV (Resizable) */}
+              <ResizableTable data={tableData} />
 
               {/* Full notes content */}
               <div className="notes-body notes-body--reader">
