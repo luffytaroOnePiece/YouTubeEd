@@ -6357,3 +6357,230 @@ body::-webkit-scrollbar {
 .notes-resize-handle--corner:hover svg {
   fill: rgba(251, 191, 36, 0.85);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SLIDES SEGMENTED TAB SWITCHER
+   ═══════════════════════════════════════════════════════════════ */
+.slides-tab-bar {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  gap: 4px;
+}
+
+.slides-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.slides-tab-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.slides-tab-btn--active {
+  background: rgba(251, 191, 36, 0.12) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(251, 191, 36, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Fullscreen tab container alignment */
+.slides-fullscreen-tab-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 0;
+  z-index: 100;
+}
+
+/* Two Switcher Buttons Container */
+.slides-two-buttons-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.slides-switch-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slides-switch-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.slides-switch-btn--active {
+  background: rgba(251, 191, 36, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.3) !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.05);
+}
+
+/* Fullscreen Toolbar Switcher Buttons */
+.slides-fullscreen-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.slides-fullscreen-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slides-fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.slides-fullscreen-btn--active {
+  background: rgba(251, 191, 36, 0.12) !important;
+  border-color: rgba(251, 191, 36, 0.3) !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Sidebar interactive presentation promo card */
+.slides-promo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  margin-top: 10px;
+}
+
+.slides-promo-card__icon {
+  font-size: 2.2rem;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.3));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.slides-promo-card__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 8px 0;
+  letter-spacing: 0.2px;
+}
+
+.slides-promo-card__text {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  max-width: 240px;
+}
+
+.slides-promo-card__btn {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.05);
+}
+
+.slides-promo-card__btn:hover {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(251, 191, 36, 0.15);
+}
+
+/* Interactive banner in slides panel */
+.slides-interactive-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(251, 191, 36, 0.05);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.03);
+}
+
+.slides-interactive-banner:hover {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(251, 191, 36, 0.08);
+}
+
+.slides-interactive-banner__icon {
+  font-size: 1.1rem;
+}
+
+.slides-interactive-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.slides-interactive-banner__content strong {
+  font-size: 0.72rem;
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.slides-interactive-banner__content span {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.45);
+}

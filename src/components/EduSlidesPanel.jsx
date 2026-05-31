@@ -15,58 +15,95 @@ const getFolderNames = (videoId) => {
 
 export default function EduSlidesPanel({ video }) {
   const [loading, setLoading] = useState(true);
-  const [slidesUrl, setSlidesUrl] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [htmlUrl, setHtmlUrl] = useState(null);
+  const [activeTab, setActiveTab] = useState(null); // 'html' or 'pdf'
   const [error, setError] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
   const videoId = video?.youtubeLinkID;
 
-  // Probe for slides.pdf on mount or videoId change
+  // Probe for slides.pdf and index.html on mount or videoId change
   useEffect(() => {
     if (!videoId) return;
 
     setLoading(true);
     setError(false);
-    setSlidesUrl(null);
+    setPdfUrl(null);
+    setHtmlUrl(null);
+    setActiveTab(null);
     setFullscreen(false);
 
     const folders = getFolderNames(videoId);
-    const urls = folders.map(
-      (f) => `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${f}/slides.pdf`
-    );
-
-    let currentIdx = 0;
     let cancelled = false;
 
-    const tryNext = () => {
-      if (cancelled) return;
-      if (currentIdx >= urls.length) {
-        setLoading(false);
-        setError(true);
-        return;
-      }
-
-      const url = urls[currentIdx];
-
-      fetch(url, { method: 'HEAD', mode: 'cors' })
-        .then((res) => {
-          if (cancelled) return;
-          if (res.ok) {
-            setSlidesUrl(url);
-            setLoading(false);
-          } else {
-            currentIdx++;
-            tryNext();
+    // Helper to probe a specific file across folders in order
+    const probeFile = (fileName) => {
+      let idx = 0;
+      return new Promise((resolve) => {
+        const tryNext = () => {
+          if (cancelled) {
+            resolve(null);
+            return;
           }
-        })
-        .catch(() => {
-          if (cancelled) return;
-          currentIdx++;
-          tryNext();
-        });
+          if (idx >= folders.length) {
+            resolve(null);
+            return;
+          }
+
+          const folder = folders[idx];
+          const url = `https://raw.githubusercontent.com/luffytaroOnePiece/EduData/main/YT/${folder}/${fileName}`;
+
+          fetch(url, { method: 'HEAD', mode: 'cors' })
+            .then((res) => {
+              if (cancelled) {
+                resolve(null);
+                return;
+              }
+              if (res.ok) {
+                resolve(url);
+              } else {
+                idx++;
+                tryNext();
+              }
+            })
+            .catch(() => {
+              if (cancelled) {
+                resolve(null);
+                return;
+              }
+              idx++;
+              tryNext();
+            });
+        };
+        tryNext();
+      });
     };
 
-    tryNext();
+    // Run probes in parallel for index.html and slides.pdf
+    Promise.all([
+      probeFile('index.html'),
+      probeFile('slides.pdf')
+    ]).then(([foundHtmlUrl, foundPdfUrl]) => {
+      if (cancelled) return;
+
+      setLoading(false);
+
+      if (foundHtmlUrl || foundPdfUrl) {
+        setHtmlUrl(foundHtmlUrl);
+        setPdfUrl(foundPdfUrl);
+
+        // Show PDF slides first in the sidebar,
+        // letting the user toggle to the HTML presentation at will.
+        if (foundPdfUrl) {
+          setActiveTab('pdf');
+        } else {
+          setActiveTab('html');
+        }
+      } else {
+        setError(true);
+      }
+    });
 
     return () => { cancelled = true; };
   }, [videoId]);
@@ -96,13 +133,21 @@ export default function EduSlidesPanel({ video }) {
     };
   }, [fullscreen]);
 
-  // Build a Google Docs viewer URL for rendering the PDF (works for raw GitHub PDFs)
-  const viewerUrl = slidesUrl
-    ? `https://docs.google.com/gview?url=${encodeURIComponent(slidesUrl)}&embedded=true`
+  // PDF Viewer via Google Docs Viewer
+  const viewerUrl = pdfUrl
+    ? `https://docs.google.com/gview?url=${encodeURIComponent(pdfUrl)}&embedded=true`
     : null;
 
-  const githubUrl = slidesUrl
-    ? slidesUrl.replace('raw.githubusercontent.com', 'github.com').replace('/main/', '/blob/main/')
+  // Interactive HTML Presentation URL via raw.githack.com (so styles/scripts work perfectly)
+  const iframeHtmlUrl = htmlUrl
+    ? htmlUrl.replace('raw.githubusercontent.com', 'raw.githack.com')
+    : null;
+
+  // Current active resource URL for fullscreen and sidebar
+  const currentIframeUrl = activeTab === 'html' ? iframeHtmlUrl : viewerUrl;
+
+  const githubUrl = (activeTab === 'html' ? htmlUrl : pdfUrl)
+    ? (activeTab === 'html' ? htmlUrl : pdfUrl).replace('raw.githubusercontent.com', 'github.com').replace('/main/', '/blob/main/')
     : null;
 
   // Shimmer loading state
@@ -123,9 +168,9 @@ export default function EduSlidesPanel({ video }) {
       <div className="slides-panel slides-panel--empty">
         <div className="notes-empty-card">
           <div className="notes-empty-icon">📄</div>
-          <h3 className="notes-empty-title">Slides Unavailable</h3>
+          <h3 className="notes-empty-title">Slides & Presentations Unavailable</h3>
           <p className="notes-empty-text">
-            There are no lecture slides uploaded for video <code>{videoId}</code> yet.
+            There are no lecture slides or HTML presentations uploaded for video <code>{videoId}</code> yet.
           </p>
           <a
             href={createUrl}
@@ -146,19 +191,31 @@ export default function EduSlidesPanel({ video }) {
       <div className="slides-panel">
         {/* Action bar */}
         <div className="notes-header-actions">
-          <button
-            className="notes-action-btn slides-action-btn--fullscreen"
-            onClick={() => setFullscreen(true)}
-          >
-            Fullscreen
-          </button>
-          <a
-            href={slidesUrl}
-            download
-            className="notes-action-btn slides-action-btn--download"
-          >
-            Download
-          </a>
+          {pdfUrl && (
+            <button
+              className="notes-action-btn slides-action-btn--fullscreen"
+              onClick={() => { setActiveTab('pdf'); setFullscreen(true); }}
+            >
+              Slides ⛶
+            </button>
+          )}
+          {htmlUrl && (
+            <button
+              className="notes-action-btn slides-action-btn--fullscreen"
+              onClick={() => { setActiveTab('html'); setFullscreen(true); }}
+            >
+              Code ⛶
+            </button>
+          )}
+          {pdfUrl && (
+            <a
+              href={pdfUrl}
+              download
+              className="notes-action-btn slides-action-btn--download"
+            >
+              Download PDF
+            </a>
+          )}
           {githubUrl && (
             <a
               href={githubUrl}
@@ -171,37 +228,104 @@ export default function EduSlidesPanel({ video }) {
           )}
         </div>
 
-        {/* Inline PDF Viewer */}
-        <div className="slides-viewer-wrapper">
-          <div className="slides-viewer-badge">📄 Lecture Slides</div>
-          <iframe
-            src={viewerUrl}
-            className="slides-viewer-iframe"
-            title="Lecture Slides"
-            frameBorder="0"
-            allowFullScreen
-          />
-        </div>
+        {/* Two Switcher Buttons in Sidebar (only shown if both HTML and PDF are available) */}
+        {htmlUrl && pdfUrl && (
+          <div className="slides-two-buttons-container">
+            <button
+              className={`slides-switch-btn ${activeTab === 'pdf' ? 'slides-switch-btn--active' : ''}`}
+              onClick={() => setActiveTab('pdf')}
+            >
+              <span className="slides-switch-btn__icon">📄</span>
+              <span className="slides-switch-btn__text">Slides</span>
+            </button>
+            <button
+              className={`slides-switch-btn ${activeTab === 'html' ? 'slides-switch-btn--active' : ''}`}
+              onClick={() => {
+                setActiveTab('html');
+                setFullscreen(true); // Open in full screen view as requested
+              }}
+            >
+              <span className="slides-switch-btn__icon">💻</span>
+              <span className="slides-switch-btn__text">Code (Fullscreen)</span>
+            </button>
+          </div>
+        )}
+
+        {/* Sidebar Main Content */}
+        {pdfUrl && activeTab !== 'html' ? (
+          /* Render the PDF viewer in the sidebar */
+          <div className="slides-viewer-wrapper" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div className="slides-viewer-badge">📄 Lecture Slides (PDF)</div>
+            <iframe
+              src={viewerUrl}
+              className="slides-viewer-iframe"
+              title="Lecture Slides PDF"
+              frameBorder="0"
+              allowFullScreen
+              style={{ flex: 1 }}
+            />
+          </div>
+        ) : htmlUrl && (activeTab === 'html' || !pdfUrl) ? (
+          /* Render banner/iframe for HTML. User wants it in full screen only */
+          <div className="slides-panel--empty" style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            <div className="notes-empty-card" style={{margin: '1rem', textAlign: 'center'}}>
+              <div className="notes-empty-icon">💻</div>
+              <h3 className="notes-empty-title">Code Presentation</h3>
+              <p className="notes-empty-text" style={{marginBottom: '1rem'}}>
+                Interactive code presentation is best viewed in full screen.
+              </p>
+              <button
+                className="notes-empty-btn slides-empty-btn"
+                onClick={() => { setActiveTab('html'); setFullscreen(true); }}
+              >
+                Open Code in Fullscreen ⛶
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {/* ── Fullscreen PDF Reader Overlay ── */}
+      {/* ── Fullscreen PDF/HTML Reader Overlay ── */}
       {fullscreen && (
         <div className="slides-fullscreen-overlay" onClick={() => setFullscreen(false)}>
           {/* Toolbar */}
           <div className="slides-fullscreen-toolbar" onClick={(e) => e.stopPropagation()}>
             <div className="notes-reader-toolbar__left">
-              <span className="notes-reader-toolbar__icon">📄</span>
-              <span className="notes-reader-toolbar__title">{video.title} — Slides</span>
+              <span className="notes-reader-toolbar__icon">
+                {activeTab === 'html' ? '🌐' : '📄'}
+              </span>
+              <span className="notes-reader-toolbar__title">
+                {video.title} — {activeTab === 'html' ? 'Interactive Presentation (Code)' : 'Slides PDF'}
+              </span>
             </div>
             <div className="notes-reader-toolbar__right">
-              <a
-                href={slidesUrl}
-                download
-                className="notes-reader-toolbar__btn"
-                onClick={(e) => e.stopPropagation()}
-              >
-                ⬇ Download PDF
-              </a>
+              {/* Fullscreen Two Switcher Buttons inside toolbar */}
+              {htmlUrl && pdfUrl && (
+                <div className="slides-fullscreen-buttons">
+                  <button
+                    className={`slides-fullscreen-btn ${activeTab === 'pdf' ? 'slides-fullscreen-btn--active' : ''}`}
+                    onClick={() => setActiveTab('pdf')}
+                  >
+                    📄 Slides
+                  </button>
+                  <button
+                    className={`slides-fullscreen-btn ${activeTab === 'html' ? 'slides-fullscreen-btn--active' : ''}`}
+                    onClick={() => setActiveTab('html')}
+                  >
+                    💻 Code
+                  </button>
+                </div>
+              )}
+              {activeTab === 'pdf' && pdfUrl && (
+                <a
+                  href={pdfUrl}
+                  download
+                  className="notes-reader-toolbar__btn"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  ⬇ Download PDF
+                </a>
+              )}
               {githubUrl && (
                 <a
                   href={githubUrl}
@@ -223,12 +347,12 @@ export default function EduSlidesPanel({ video }) {
             </div>
           </div>
 
-          {/* Full-size PDF */}
+          {/* Full-size Content Frame */}
           <div className="slides-fullscreen-content" onClick={(e) => e.stopPropagation()}>
             <iframe
-              src={viewerUrl}
+              src={currentIframeUrl}
               className="slides-fullscreen-iframe"
-              title="Lecture Slides Fullscreen"
+              title="Lecture Resource Fullscreen"
               frameBorder="0"
               allowFullScreen
             />
