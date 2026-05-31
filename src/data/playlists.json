@@ -20,7 +20,15 @@
     "icon": "",
     "categories": {
       "Git Operations": {
-        "FUndementals": "PLr8N8x0VipGb0NhjMLCv7XPxiiyuFseGP"
+        "Fundamentals": "PLr8N8x0VipGb0NhjMLCv7XPxiiyuFseGP"
+      }
+    }
+  },
+  "Computer Science": {
+    "icon": "",
+    "categories": {
+      "Fundamentals": {
+        "OS": "PLr8N8x0VipGYf4Dnf5dFBe7bBIkngCe00"
       }
     }
   }
